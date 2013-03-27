@@ -104,15 +104,33 @@ Move the pgbackendsettings.py file and the .py files under condenser/ there:
 * Observe they share the same settings file. This is because the first one
 is saving the 'raw' data, and the second is putting it in place.
 
+You can test it by force a manual cycle by invoking it directly:
+
+	python /opt/carbon-pgbackend/pgcondenser.py
+
+Making them runnable
+-------------------------------------------------------
+
+We need both carbon (with our pgbackend) and the condenser running
+automatically.
+
+Carbon can run by itself by invoking it without the --debug flags:
+
+	python /opt/graphite/bin/carbon-cache.py start
+
+Alternatively, this directory contains a carbon.conf file which can be
+deployed to the supervisord directory in /etc:
+
+	cp carbon.conf /etc/supervisor/conf.d/
+
+Stoppping and starting again supervisor should then have it running
+(I had problems directly invoking a 'restart' on it, thus the manual
+stop/start cycle).
+
 Finally, put condenser/pgconsender.sh in /etc/cron.hourly, so it runs, uh,
 hourly:
 
 	cp condenser/pgbackend.sh /etc/cron.hourly/
-
-And that's it. Automatically the stats will be 'condensed' hourly. You can test
-it by force a manual cycle by invoking it directly:
-
-	python /opt/carbon-pgbackend/pgcondenser.py
 
 Profit!
 
