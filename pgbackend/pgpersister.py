@@ -38,10 +38,10 @@ class PostgresqlPersister(BasePersister):
         if hasattr(self, '_connection'): #Try to close any previous connection
             self._connection.close()
 
-        connection = psycopg2.connect(database=PG_BACKEND_SETTINGS["dbname"],
-                        host=PG_BACKEND_SETTINGS["host"],
-                        user=PG_BACKEND_SETTINGS["user"],
-                        password=PG_BACKEND_SETTINGS["password"])
+        connection = psycopg2.connect(database=PGBACKEND_SETTINGS["dbname"],
+                        host=PGBACKEND_SETTINGS["host"],
+                        user=PGBACKEND_SETTINGS["user"],
+                        password=PGBACKEND_SETTINGS["password"])
         self._connection = connection
         self._connection_alive = True
 
