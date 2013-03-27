@@ -1,0 +1,12 @@
+This is a small module containins some patches
+and utilities to easily deploy/use Graphite/carbon using
+our Postgres backend (where we will save the stats).
+
+These files are based on Carlos's fork of carbon under:
+
+	http://github.com/carlosalberto/carbon-fork
+
+
+And should, thereof, be updated with those files as time
+goes by.
+

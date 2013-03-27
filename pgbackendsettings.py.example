@@ -1,0 +1,8 @@
+
+PGBACKEND_SETTINGS = {
+    "dbname" : "stats_db",
+    "user" : "user",
+    "password" : "password",
+    "host" : "localhost"
+}
+

@@ -1,0 +1,92 @@
+This is a set of files and utils to extend/modify
+Graphite+Carbon to handle the stats and save them to
+a Postgres database.
+
+This roughly consist of two components (for now):
+
+1. Carbon's Postgres backend: a set of files to
+	allow Carbon to save the data to a Postgres
+	database.
+
+2. Condenser: A simple Python app to query the incoming
+	data and update the main table containing all the
+	stats.
+
+Initial configuration
+-------------------------------------------------------
+
+First of all, install carbon/whisper (Graphite components
+we need). Hopefully we have them in a list of requirements.
+Just install them (globally) using pip (as root):
+
+	pip install -r pip.requirements.txt
+
+A Postgres database is needed for storing the data. Create one,
+and assign it to a (new) user. Next, configure the
+settings file (from the example in this directory):
+
+
+PGBACKEND_SETTINGS = {
+    "dbname" : "statsd_db_name",
+    "user" : "stats_user",
+    "password" : "stats_user_password",
+    "host" : "localhost"
+}
+
+Now create the required tables using some included sql:
+
+	psql -U stats_user stats_db_name < sql/stats.sql
+
+Now we are ready to actually use them.
+
+Postgres Backend Setup
+-------------------------------------------------------
+
+Copy the pgbackendsettings.py file and the .py files under pgbackend/ to
+PREFIX/graphite/lib/carbon/, such as:
+
+	cp pgbackendsettings.py /opt/graphite/lib/carbon/
+	cp pgbackend/*py /opt/graphite/lib/carbon/
+
+This will add a pair of files, and will override 'writer.py'.
+
+Now (re)start Graphite/carbon:
+
+python /opt/graphite/bin/carbon-cache.py stop
+python /opt/graphite/bin/carbon-cache.py start
+
+Logs can be found under PREFIX/storage/log/carbon-cache/, in case
+of errors.
+
+Condenser
+-------------------------------------------------------
+
+The condenser is right now kept as a crond service, although we may
+switch it to supervisord, as this is what we use for running other
+foo around.
+
+Create carbon-pgbackend/ under PREFIX, such as:
+
+	mkdir /opt/carbon-pgbackend
+
+Move the pgbackendsettings.py file and the .py files under condenser/ there:
+
+	cp pgbackendsettings.py /opt/carbon-pgbackend/
+	cp condenser/*py /op/carbon-pgbackend/
+
+* Observe they share the same settings file. This is because the first one
+is saving the 'raw' data, and the second is putting it in place.
+
+Finally, put condenser/pgconsender.sh in /etc/cron.hourly, so it runs, uh,
+hourly:
+
+	cp condenser/pgbackend.sh /etc/cron.hourly/
+
+And that's it. Automatically the stats will be 'condensed' hourly. You can test
+it by force a manual cycle by invoking it directly:
+
+	python /opt/carbon-pgbackend/pgcondenser.py
+
+Profit!
+
+

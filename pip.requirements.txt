@@ -1,0 +1,3 @@
+whisper==0.9.10
+carbon
+
