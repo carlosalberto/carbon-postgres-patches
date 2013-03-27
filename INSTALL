@@ -12,7 +12,7 @@ This roughly consist of two components (for now):
 	data and update the main table containing all the
 	stats.
 
-Initial configuration
+Installing Graphite/Carbon
 -------------------------------------------------------
 
 First of all, install carbon/whisper (Graphite components
@@ -20,6 +20,27 @@ we need). Hopefully we have them in a list of requirements.
 Just install them (globally) using pip (as root):
 
 	pip install -r pip.requirements.txt
+
+This will install both carbon and whisper, which are components
+we will later patch to store our data in a Postgres database.
+
+By default, they are installed to /opt/graphite/ (this at least true
+for Mac/Ubuntu using 'pip').
+
+In order to make the setup runnable, you need to provide default
+configuration. This is achieved by copying the defaults settings:
+
+	cd /opt/graphite/conf/
+	cp carbon.conf.example carbon.conf
+	cp storage-schemas.conf.example storage-schemas.conf
+
+Make sure it works now:
+
+	python /opt/graphite/bin/carbon-cache.py --debug start
+
+
+Database configuration
+-------------------------------------------------------
 
 A Postgres database is needed for storing the data. Create one,
 and assign it to a (new) user. Next, configure the
@@ -49,6 +70,12 @@ PREFIX/graphite/lib/carbon/, such as:
 	cp pgbackend/*py /opt/graphite/lib/carbon/
 
 This will add a pair of files, and will override 'writer.py'.
+
+Now instruct the carbon configuration to use our Postgres backend:
+(/opt/graphite/conf/carbon.conf):
+
+	CARBON_PERSISTER = "pgbackend"
+
 
 Now (re)start Graphite/carbon:
 
