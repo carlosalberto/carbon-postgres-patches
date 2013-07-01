@@ -109,6 +109,10 @@ def writeCachedDataPoints():
           if updates >= settings.MAX_UPDATES_PER_SECOND:
             time.sleep( int(t2 + 1) - t2 )
 
+    # Let the persister know it can flush
+    # (depends on the implementation)
+    persister.flush()
+
     # Avoid churning CPU when only new metrics are in the cache
     if not dataWritten:
       time.sleep(0.1)

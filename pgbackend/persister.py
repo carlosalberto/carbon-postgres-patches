@@ -36,6 +36,10 @@ class BasePersister(object):
   def update_many(self, metric, datapoints, dbIdentifier):
     pass
 
+  def flush(self):
+    pass
+
+
 class WhisperPersister(BasePersister):
 
   def get_dbinfo(self, metric):
