@@ -1,6 +1,7 @@
 
 import os
 import psycopg2
+import datetime
 
 from pgbackendsettings import *
 from statshandling import *
@@ -13,6 +14,16 @@ def open_connection():
                         user=PGBACKEND_SETTINGS['user'],
                         password=PGBACKEND_SETTINGS['password'])
         return connection
+
+'''
+We could use the logging facilities later if needed.
+'''
+def log(message):
+    if not message:
+        return
+
+    time = datetime.datetime.now()
+    print '{0} - {1}'.format(time, message)
 
 '''
 Our condense phase consist in retrieving data from our latest_stats table,
@@ -31,6 +42,7 @@ def condense():
 
     try:
         connection = open_connection()
+        log('Connection stablished.')
 
         sql = """
             SELECT
@@ -42,6 +54,8 @@ def condense():
         """
         cursor = connection.cursor()
         cursor.execute(sql)
+        log ('Query successfully proccessed.')
+
         data = cursor.fetchall()
         for x in data:
             name = x[0].strip()
@@ -59,6 +73,7 @@ def condense():
 
             stat_obj.process_value(name, value, tstamp)
 
+        log('Proccessing done. About to save the stats.')
         for stat_key, stat_obj in stats_cache.iteritems():
             stat_obj.evaluate()
             stat_type = stat_obj.stat_type
@@ -104,6 +119,7 @@ def condense():
                     cursor.execute(sql_daily_insert, [name, day,
                                                       value])
 
+        log('Clearing temporary and old data...')
         clear_sql = """
             DELETE FROM latest_stats
         """
@@ -119,10 +135,12 @@ def condense():
         clear_cursor2.execute(clear_old_sql, (DEFAULT_MAX_OLD,))
 
         connection.commit()
+        log('Operation succeeded.')
+
     except psycopg2.Warning, e:
-        print "Warning while performing the sql operation: %s" % e
+        log("Warning while performing the sql operation: %s" % e)
     except psycopg2.Error, e:
-        print "Error while performing the sql operation: %s" % e
+        log("Error while performing the sql operation: %s" % e)
 
 def main():
     condense()

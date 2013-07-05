@@ -24,6 +24,7 @@ from carbon import log, events, instrumentation
 from carbon.persister import BasePersister
 
 from pgbackendsettings import *
+from statshandling import *
 
 import psycopg2
 
@@ -68,12 +69,33 @@ class PostgresqlPersister(BasePersister):
         '''
         return ('latest_stats', True)
 
+    def _is_metric_discardable(self, metric, value):
+
+        # Not supported types should be ignored.
+        stat_type = get_stat_type(metric)
+        if stat_type == StatObject.IgnoredType:
+            return True
+
+        # Empty, replicated/echoed counters are useless for us.
+        if stat_type == StatObject.CounterType and value == 0:
+            return True
+
+        '''
+        Ignore the metrics with _90 for now (not sure what they do,
+        besides repeating the info under some scenarios). Do the same
+        with *.[upper|lower|mean], as we do not use them for now.
+        '''
+        if metric.endswith("_90") or metric.endswith(".upper") or \
+            metric.endswith(".lower") or metric.endswith("mean"):
+            return True
+
+        return False
+
     def update_one(self, metric, datapoint):
         value = datapoint[1]
         timestamp = datetime.datetime.fromtimestamp(int(datapoint[0]))
 
-        # Don't pollute the database with empty counters (totally useless).
-        if metric.startswith('stats_counts') and value == 0:
+        if self._is_metric_discardable(metric, value):
             return
 
         log.msg("Updating metric %s using the postgresql persister" % (metric,))
@@ -93,15 +115,6 @@ class PostgresqlPersister(BasePersister):
         'metric' is the name of the param ('my.value')
         'datapoints' is a list of tuples, containing the timestamp and value
         '''
-
-        '''
-        Ignore the metrics with _90 for now (not sure what they do,
-        besides repeating the info under some scenarios). Do the same
-        with *.[upper|lower|mean], as we do not use them for now.
-        '''
-        if metric.endswith("_90") or metric.endswith(".upper") or \
-            metric.endswith(".lower") or metric.endswith("mean"):
-            return
 
         try:
             self.check_alive()

@@ -1,21 +1,35 @@
 
 import os, datetime
 
+def get_stat_type(name):
+    """
+    Get the stat type based/infered on its name.
+    """
+    if name.startswith("stats_counts"):
+        return StatObject.CounterType
+
+    if name.startswith("stats.timers") and \
+       (name.endswith(".count") or name.endswith(".sum")):
+        return StatObject.TimerType
+
+    return StatObject.IgnoredType
+
 def get_stat_info(name):
     '''
     Get a tuple containing the type of stat, as well as its
     corresponding key (canonical name, we could think of).
     '''
 
+    stat_type = get_stat_type(name)
+    if stat_type == StatObject.IgnoredType:
+        return (StatObject.IgnoredType, None)
+
     ''' substring, just everything after stats_counts '''
-    if name.startswith("stats_counts"):
+    if stat_type == StatObject.CounterType:
         return (StatObject.CounterType, name[13:])
 
-    if name.startswith("stats.timers"):
+    if stat_type == StatObject.TimerType:
         retval = name[13:]
-
-        if not (retval.endswith(".count") or retval.endswith(".sum")):
-            return (StatObject.IgnoredType, None)
 
         if retval.endswith(".count"):
             retval = retval[:-6]
@@ -27,7 +41,7 @@ def get_stat_info(name):
     '''if name.startswith("carbon.agents"):
         return (StatObject.CarbonType, "")'''
 
-    return (StatObject.IgnoredType, None)
+    raise Exception("Unrecognized metric: %s" % name)
 
 
 def create_stat_obj(name, stat_type):
@@ -147,6 +161,7 @@ class TimerObject(StatObject):
             count = sum = 0
             for stat_tstamp, stat_info in stat_list.iteritems():
                 if not stat_info.is_complete:
+                    print 'Stat %s is incomplete!' % self.name
                     ''' Discard incomplete stats '''
                     continue
 
